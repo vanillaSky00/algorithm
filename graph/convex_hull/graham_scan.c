@@ -79,6 +79,8 @@ static inline double area(Point a, Point b, Point c) {
 }
 
 double max_triangle_area(Point *hull, int n) {
+    if (n < 3) return 0.0;
+
     double best = 0.0;
     for (int a = 0; a < n; a++) {
         int b = (a + 1) % n;
@@ -95,6 +97,7 @@ double max_triangle_area(Point *hull, int n) {
             b = (b + 1) % n;
         }
     }
+    return best;
 }
 
 
