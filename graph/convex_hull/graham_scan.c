@@ -7,7 +7,7 @@ typedef struct Point {
 } Point;
 
 static inline double cross(Point a, Point b, Point c) {
-    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x); // cross(AB, AC)
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x); // cross(AB, AC) = (b - a) × (c - a)
 }
 
 static inline double dist2(Point a, Point b) {
@@ -28,11 +28,11 @@ static int cmp_angle(const void* A, const void* B) {
     if (cr > 0) return -1; // pa is more CCW than pb → comes first
     if (cr < 0) return 1;  // pb comes first
     
-    // Same angle: keep the farther one first (so nearer gets popped/removed later)
+    // Same angle: nearest first (so nearer gets popped/removed later)
     double da = dist2(P0, *pa);
     double db = dist2(P0, *pb);
-    if (da > db) return -1;
-    if (da < db) return 1;
+    if (da < db) return -1;
+    if (da > db) return 1;
     return 0;
 }
 
@@ -65,6 +65,9 @@ int graham_scan(Point *points, int n, Point *hull) {
     hull[top++] = points[1];
 
     for (int i = 2; i < n; i++) {
+        // like next greater element problem:
+        // if makes a right turn, the middle point (hull[top-1]) cannot be part of the convex hull → pop it.
+        // > 0 → left turn (CCW) → put to stack
         while (top >= 2 && cross(hull[top - 2], hull[top - 1], points[i]) <= 0) {
             --top;
         }
@@ -105,14 +108,21 @@ int main(void) {
     // note if larger inputs we can use __int128
     Point pts[] = {{0,0},{2,0},{2,2},{0,2},{1,1},{1,2}};
     int n = sizeof(pts)/sizeof(pts[0]);
-
     Point hull[100];
     int h = graham_scan(pts, n, hull);
-
     for (int i = 0; i < h; ++i) {
         printf("(%.6g, %.6g)\n", hull[i].x, hull[i].y);
     }
-
     double max_area = max_triangle_area(hull, h);
     printf("Max Traingle Area: %.6g\n", max_area);
+
+    // Test for nearer first
+    Point pts2[] = {{0,0},{0,1},{1,0},{0,2},{2,0}};
+    h = graham_scan(pts2, n, hull);
+    for (int i = 0; i < h; ++i) {
+        printf("(%.6g, %.6g)\n", hull[i].x, hull[i].y);
+    }
+    max_area = max_triangle_area(hull, h);
+    printf("Max Traingle Area: %.6g\n", max_area);
+
 }
