@@ -1,15 +1,17 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 typedef struct Point {
     double x, y;
 } Point;
 
-static inline double cross(Point c, Point a, Point b) {
-    return (a.x - c.x) * (b.y - c.y) - (a.y - c.y) * (b.x - c.x); // CA, CB
+static inline double cross(Point a, Point b, Point c) {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x); // cross(AB, AC)
 }
 
 static inline double dist2(Point a, Point b) {
-    double dx = b.x - b.x;
+    double dx = b.x - a.x;
     double dy = b.y - a.y;
     return dx * dx + dy * dy;
 }
@@ -35,9 +37,9 @@ static int cmp_angle(const void* A, const void* B) {
 }
 
 
-int Graham_scan(Point *points, int n, Point *hull_out) {
+int graham_scan(Point *points, int n, Point *hull) {
     if (n <= 1) {
-        if (n == 1) hull_out[0] = points[0];
+        if (n == 1) hull[0] = points[0];
         return n;
     } // handle 3?
 
@@ -45,22 +47,69 @@ int Graham_scan(Point *points, int n, Point *hull_out) {
     // find pivot P0 = lowest y (tie: lowest x)
     int p0 = 0;
     for (int i = 1; i < n; i++) {
-        if (points[i].y < points[0].y || points[i].y == points[0].y && points[i].x < points[0].x) 
+        if (points[i].y < points[0].y || 
+           (points[i].y == points[0].y && points[i].x < points[0].x)) {
             p0 = i;
+        }
     }
-    Point temp = points[0];
+    Point tmp = points[0];
     points[0] = points[p0];
-    points[p0] = temp;
+    points[p0] = tmp;
+    P0 = points[0];
 
-    qsort(points, n - 1, sizeof(Point), cmp_angle);
+    // sort by angle exlude p0
+    qsort(points + 1, n - 1, sizeof(Point), cmp_angle);
 
-    int vertice = 0;
-    int stack[100];
+    int top = 0;
+    hull[top++] = points[0];
+    hull[top++] = points[1];
 
+    for (int i = 2; i < n; i++) {
+        while (top >= 2 && cross(hull[top - 2], hull[top - 1], points[i]) <= 0) {
+            --top;
+        }
+        hull[top++] = points[i];
+    }
+
+    return top;
 }
+
+static inline double area(Point a, Point b, Point c) {
+    return fabs(cross(a, b, c)) / 2.0;
+}
+
+double max_triangle_area(Point *hull, int n) {
+    double best = 0.0;
+    for (int a = 0; a < n; a++) {
+        int b = (a + 1) % n;
+        int c = (b + 1) % n;
+
+        while (b != a) {
+            // fix a, b and move c
+            while(area(hull[a], hull[b], hull[c]) <= area(hull[a], hull[b], hull[(c+1)%n])) {
+                c = (c + 1) % n;
+            }
+            double A = area(hull[a], hull[b], hull[c]);
+            best = (best > A) ? best : A;
+
+            b = (b + 1) % n;
+        }
+    }
+}
+
 
 int main(void) {
     // note if larger inputs we can use __int128
-    Point points[100];
-    int num = sizeof(points) / sizeof(Point);
+    Point pts[] = {{0,0},{2,0},{2,2},{0,2},{1,1},{1,2}};
+    int n = sizeof(pts)/sizeof(pts[0]);
+
+    Point hull[100];
+    int h = graham_scan(pts, n, hull);
+
+    for (int i = 0; i < h; ++i) {
+        printf("(%.6g, %.6g)\n", hull[i].x, hull[i].y);
+    }
+
+    double max_area = max_triangle_area(hull, h);
+    printf("Max Traingle Area: %.6g\n", max_area);
 }
