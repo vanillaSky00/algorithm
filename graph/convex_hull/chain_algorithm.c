@@ -1,25 +1,6 @@
 #include <stdio.h>
 
-typedef struct Point {
-    int x, y;
-} Point;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int main() {
-
+int main(void) { 
+    return 0;
 }
